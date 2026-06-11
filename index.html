@@ -7,453 +7,70 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js" integrity="sha512-hG6tLc9q8bFM5OQASDTJTJJg/wn8PP0PcayE3I2H1972/F7ktiSvWutAuQIkt4QUTIhiaFEnkrKea7XHUv1ugg==" crossorigin="anonymous"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500&display=swap');
-
   *{margin:0;padding:0;box-sizing:border-box}
-
-  :root {
-    --blue: #0000FF;
-    --black: #000000;
-    --white: #FFFFFF;
-    --gray: #DDE3E9;
-    --gray2: #787878;
-    --green: #A7E66B;
-    --pink: #FEA8CD;
-    --yellow: #FBD880;
-    --bg: #F5F5F5;
-  }
-
-  body {
-    background: var(--white);
-    color: var(--black);
-    font-family: 'Inter', sans-serif;
-    font-weight: 400;
-    min-height: 100vh;
-    padding: 0 16px 80px;
-  }
-
-  header {
-    max-width: 680px;
-    margin: 0 auto;
-    padding: 48px 0 40px;
-    border-bottom: 1px solid var(--gray);
-  }
-
-  .logo {
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--gray2);
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .logo-dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    background: var(--blue);
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .logo a {
-    color: var(--blue);
-    text-decoration: none;
-    font-weight: 700;
-  }
-
-  h1 {
-    font-family: 'Space Mono', monospace;
-    font-size: clamp(32px, 6vw, 52px);
-    font-weight: 700;
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-    color: var(--black);
-  }
-
-  h1 em {
-    font-style: normal;
-    color: var(--blue);
-  }
-
-  .tagline {
-    margin-top: 14px;
-    font-size: 15px;
-    color: var(--gray2);
-    line-height: 1.6;
-    max-width: 480px;
-  }
-
-  .connect-bar {
-    margin-top: 28px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .btn {
-    font-family: 'Space Mono', monospace;
-    font-size: 12px;
-    letter-spacing: 0.03em;
-    border: none;
-    cursor: pointer;
-    padding: 10px 22px;
-    border-radius: 999px;
-    transition: background 0.15s, transform 0.1s;
-    font-weight: 400;
-  }
-
-  .btn:active { transform: scale(0.97); }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  .btn-primary {
-    background: var(--blue);
-    color: var(--white);
-  }
-  .btn-primary:hover:not(:disabled) { background: #0000CC; }
-
-  .btn-ghost {
-    background: transparent;
-    border: 1.5px solid var(--black);
-    color: var(--black);
-  }
-  .btn-ghost:hover { background: var(--gray); }
-
-  .wallet-addr {
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    color: var(--black);
-    background: var(--gray);
-    padding: 6px 14px;
-    border-radius: 999px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .wallet-dot {
-    width: 6px;
-    height: 6px;
-    background: var(--green);
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  main {
-    max-width: 680px;
-    margin: 40px auto 0;
-  }
-
-  .section-label {
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--gray2);
-    margin-bottom: 14px;
-  }
-
-  .form-card {
-    background: var(--white);
-    border: 1.5px solid var(--gray);
-    border-radius: 8px;
-    padding: 24px;
-    margin-bottom: 40px;
-  }
-
-  textarea {
-    width: 100%;
-    background: var(--bg);
-    border: 1.5px solid var(--gray);
-    border-radius: 6px;
-    color: var(--black);
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    padding: 14px;
-    resize: vertical;
-    min-height: 100px;
-    outline: none;
-    transition: border-color 0.15s;
-    line-height: 1.6;
-  }
-  textarea:focus { border-color: var(--blue); }
-  textarea::placeholder { color: var(--gray2); }
-
-  .char-count {
-    font-size: 11px;
-    color: var(--gray2);
-    text-align: right;
-    margin-top: 6px;
-    font-family: 'Space Mono', monospace;
-  }
-
-  .date-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
-    margin-top: 12px;
-    align-items: end;
-  }
-
-  .field-label {
-    font-size: 11px;
-    color: var(--gray2);
-    margin-bottom: 6px;
-    font-family: 'Space Mono', monospace;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-
-  input[type="datetime-local"] {
-    width: 100%;
-    background: var(--bg);
-    border: 1.5px solid var(--gray);
-    border-radius: 6px;
-    color: var(--black);
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    padding: 10px 14px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-  input[type="datetime-local"]:focus { border-color: var(--blue); }
-
-  .status {
-    margin-top: 14px;
-    font-size: 12px;
-    font-family: 'Space Mono', monospace;
-    color: var(--gray2);
-    min-height: 18px;
-  }
-  .status.ok { color: #007700; }
-  .status.err { color: #CC0000; }
-
-  .read-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
-    margin-bottom: 20px;
-    align-items: end;
-  }
-
-  input[type="number"] {
-    width: 100%;
-    background: var(--white);
-    border: 1.5px solid var(--black);
-    border-radius: 6px;
-    color: var(--black);
-    font-family: 'Space Mono', monospace;
-    font-size: 13px;
-    padding: 10px 14px;
-    outline: none;
-    transition: border-color 0.15s;
-    -moz-appearance: textfield;
-  }
-  input[type="number"]::-webkit-outer-spin-button,
-  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  input[type="number"]:focus { border-color: var(--blue); }
-
-  .capsule-card {
-    border: 1.5px solid var(--gray);
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 12px;
-    background: var(--white);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .capsule-card.locked {
-    border-color: var(--blue);
-    background: #F0F0FF;
-  }
-
-  .capsule-card.unlocked {
-    border-color: var(--green);
-    background: #F5FFF0;
-  }
-
-  .capsule-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 4px;
-    height: 100%;
-  }
-  .capsule-card.locked::before { background: var(--blue); }
-  .capsule-card.unlocked::before { background: var(--green); }
-
-  .capsule-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-    padding-left: 4px;
-  }
-
-  .capsule-id {
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    color: var(--gray2);
-  }
-
-  .badge {
-    font-family: 'Space Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 3px 10px;
-    border-radius: 999px;
-  }
-
-  .badge.locked {
-    background: var(--blue);
-    color: var(--white);
-  }
-
-  .badge.unlocked {
-    background: var(--green);
-    color: var(--black);
-  }
-
-  .capsule-message {
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--black);
-    margin-bottom: 14px;
-    padding-left: 4px;
-  }
-
-  .locked-placeholder {
-    font-size: 13px;
-    color: var(--gray2);
-    padding-left: 4px;
-  }
-
-  .capsule-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 11px;
-    color: var(--gray2);
-    font-family: 'Space Mono', monospace;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding-left: 4px;
-  }
-
-  .countdown {
-    color: var(--blue);
-    font-weight: 700;
-  }
-
-  .total-badge {
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    color: var(--gray2);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .total-badge strong {
-    color: var(--black);
-    font-size: 13px;
-  }
-
-  .total-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--blue);
-    color: var(--white);
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-family: 'Space Mono', monospace;
-  }
-
-  .network-warn {
-    background: #FFF0F0;
-    border: 1.5px solid #CC0000;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 12px;
-    color: #CC0000;
-    font-family: 'Space Mono', monospace;
-    margin-bottom: 20px;
-    display: none;
-  }
-
-  .divider {
-    border: none;
-    border-top: 1px solid var(--gray);
-    margin: 40px 0;
-  }
-
-  /* accent squares like Base branding */
-  .accent-sq {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    background: var(--blue);
-    border-radius: 2px;
-    margin-right: 6px;
-    vertical-align: middle;
-  }
+  body{background:#fff;color:#000;font-family:'Inter',sans-serif;padding:0 16px 80px}
+  header{max-width:680px;margin:0 auto;padding:48px 0 40px;border-bottom:1px solid #DDE3E9}
+  .logo{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.2em;color:#787878}
+  .logo span{color:#0000FF;font-weight:700}
+  h1{font-family:'Space Mono',monospace;font-size:clamp(32px,6vw,52px);letter-spacing:-.03em;font-weight:700}
+  h1 em{color:#0000FF;font-style:normal}
+  .tagline{color:#787878;margin-top:12px;font-size:15px;line-height:1.6}
+  .btn{font-family:'Space Mono',monospace;padding:10px 22px;border-radius:999px;cursor:pointer;border:none;font-size:12px;transition:background .15s}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn-primary{background:#0000FF;color:#fff}
+  .btn-primary:hover:not(:disabled){background:#0000CC}
+  .btn-ghost{background:transparent;border:1.5px solid #000;color:#000}
+  .btn-ghost:hover{background:#DDE3E9}
+  .wallet-addr{font-family:'Space Mono',monospace;background:#DDE3E9;color:#000;padding:6px 14px;border-radius:999px;font-size:11px}
+  main{max-width:680px;margin:40px auto 0}
+  .form-card{background:#fff;border:1.5px solid #DDE3E9;border-radius:8px;padding:24px;margin-bottom:40px}
+  textarea,input{background:#F5F5F5;border:1.5px solid #DDE3E9;border-radius:6px;color:#000;padding:12px;width:100%;font-family:'Inter',sans-serif;font-size:14px;outline:none;transition:border-color .15s}
+  textarea{resize:vertical;min-height:100px;line-height:1.6}
+  textarea::placeholder,input::placeholder{color:#787878}
+  textarea:focus,input:focus{border-color:#0000FF}
+  input[type="number"]{background:#fff;border:1.5px solid #000;font-family:'Space Mono',monospace;-moz-appearance:textfield}
+  input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type="datetime-local"]{color-scheme:light}
+  .date-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:12px}
+  .status{margin-top:14px;font-size:12px;color:#787878;font-family:'Space Mono',monospace}
+  .status.ok{color:#007700}
+  .status.err{color:#CC0000}
+  .capsule-card{border:1.5px solid #DDE3E9;border-radius:8px;padding:20px;margin-bottom:12px;background:#fff;position:relative;overflow:hidden}
+  .capsule-card.locked{border-color:#0000FF;background:#F0F0FF}
+  .capsule-card.unlocked{border-color:#A7E66B;background:#F5FFF0}
+  .badge{font-size:9px;padding:3px 10px;border-radius:999px;font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em}
+  .badge.locked{background:#0000FF;color:#fff}
+  .badge.unlocked{background:#A7E66B;color:#000}
+  .capsule-footer{display:flex;justify-content:space-between;font-size:11px;color:#787878;margin-top:12px;font-family:'Space Mono',monospace}
+  .network-warn{background:#FFF0F0;border:1.5px solid #CC0000;border-radius:8px;padding:12px;color:#CC0000;display:none;margin-bottom:20px;font-family:'Space Mono',monospace;font-size:12px}
 </style>
 </head>
 <body>
-
 <header>
-  <div class="logo">
-    <span class="logo-dot"></span>
-    On-chain &nbsp;·&nbsp; <a href="https://base.org" target="_blank">Base</a> Mainnet &nbsp;·&nbsp; 0x36A9...08e69
-  </div>
+  <div class="logo">On-chain · <span>Base Mainnet</span> · 0x36A9...08e69</div>
   <h1>Time<br><em>Capsule</em></h1>
   <p class="tagline">Write a message. Set a date. It stays sealed until then — forever on Base.</p>
   <div class="connect-bar">
     <button class="btn btn-primary" id="connectBtn">Connect Wallet</button>
-    <div class="wallet-addr" id="walletAddr" style="display:none">
-      <span class="wallet-dot"></span>
-      <span id="walletAddrText"></span>
-    </div>
+    <div class="wallet-addr" id="walletAddr" style="display:none"></div>
   </div>
 </header>
 
 <main>
   <div class="network-warn" id="networkWarn">⚠ Switch to Base Mainnet (chain 8453)</div>
-
-  <div class="section-label"><span class="accent-sq"></span>Create a capsule</div>
   <div class="form-card">
-    <textarea id="msgInput" placeholder="Write your message to the future..." maxlength="1000"></textarea>
-    <div class="char-count"><span id="charCount">0</span> / 1000</div>
+    <textarea id="msgInput" placeholder="Your message to the future..." maxlength="1000"></textarea>
     <div class="date-row">
-      <div>
-        <div class="field-label">Unlock date</div>
-        <input type="datetime-local" id="dateInput">
-      </div>
+      <input type="datetime-local" id="dateInput">
       <button class="btn btn-primary" id="createBtn" disabled>Seal →</button>
     </div>
     <div class="status" id="createStatus"></div>
   </div>
-
-  <hr class="divider">
-
-  <div class="section-label"><span class="accent-sq"></span>Read a capsule</div>
-  <div class="read-row">
-    <div>
-      <div class="field-label">Capsule ID</div>
-      <input type="number" id="capsuleIdInput" placeholder="0" min="0">
-    </div>
+  <div style="display:flex;gap:10px;margin-bottom:20px">
+    <input type="number" id="capsuleIdInput" placeholder="Capsule ID" style="flex:1">
     <button class="btn btn-ghost" id="readBtn">Read</button>
   </div>
-
-  <div id="totalBadge"></div>
+  <div id="totalBadge" style="font-size:12px;margin-bottom:16px"></div>
   <div id="capsuleResult"></div>
 </main>
 
@@ -480,7 +97,6 @@ async function startApp() {
 
   const connectBtn = document.getElementById('connectBtn');
   const walletAddr = document.getElementById('walletAddr');
-  const walletAddrText = document.getElementById('walletAddrText');
   const createBtn = document.getElementById('createBtn');
   const msgInput = document.getElementById('msgInput');
   const dateInput = document.getElementById('dateInput');
@@ -491,13 +107,15 @@ async function startApp() {
   const totalBadge = document.getElementById('totalBadge');
   const networkWarn = document.getElementById('networkWarn');
 
-  msgInput.addEventListener('input', e => {
-    document.getElementById('charCount').textContent = e.target.value.length;
-  });
-
   function setStatus(msg, type = '') {
     createStatus.textContent = msg;
     createStatus.className = 'status ' + type;
+  }
+
+  function formatDate(ts) {
+    const d = new Date(ts * 1000);
+    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return m[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
   }
 
   async function initReadContract() {
@@ -517,8 +135,8 @@ async function startApp() {
     if (!readContract) return;
     try {
       const total = await readContract.totalCapsules();
-      totalBadge.innerHTML = `<span class="total-pill">⬡ ${total.toString()} capsules sealed on Base</span>`;
-    } catch(e) { totalBadge.innerHTML = ''; }
+      totalBadge.innerHTML = `📦 Total capsules: <strong>${total.toString()}</strong>`;
+    } catch(e) { totalBadge.innerHTML = `📦 Total capsules: —`; }
   }
 
   async function switchToBase() {
@@ -530,10 +148,8 @@ async function startApp() {
     } catch(e) {
       if (e.code === 4902) {
         await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [{
-          chainId: '0x2105', chainName: 'Base Mainnet',
-          nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-          rpcUrls: ['https://mainnet.base.org'],
-          blockExplorerUrls: ['https://basescan.org']
+          chainId: '0x2105', chainName: 'Base Mainnet', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+          rpcUrls: ['https://mainnet.base.org'], blockExplorerUrls: ['https://basescan.org']
         }]});
         networkWarn.style.display = 'none';
         return true;
@@ -559,8 +175,8 @@ async function startApp() {
       networkWarn.style.display = 'none';
       signerContract = new ethers.Contract(CONTRACT, ABI, signer);
       const addr = await signer.getAddress();
-      walletAddrText.textContent = addr.slice(0,6)+'...'+addr.slice(-4);
-      walletAddr.style.display = 'flex';
+      walletAddr.textContent = addr.slice(0,6)+'...'+addr.slice(-4);
+      walletAddr.style.display = 'block';
       connectBtn.style.display = 'none';
       createBtn.disabled = false;
       setStatus('Ready to seal', 'ok');
@@ -584,7 +200,7 @@ async function startApp() {
     try {
       setStatus('Confirm in MetaMask...');
       const tx = await signerContract.createCapsule(msg, unlockTime);
-      setStatus('Sealing capsule...');
+      setStatus('Tx: ' + tx.hash.slice(0,10) + '... waiting');
       const receipt = await tx.wait();
       let newId = '?';
       for (const log of receipt.logs) {
@@ -593,16 +209,15 @@ async function startApp() {
           if (parsed?.name === 'CapsuleCreated') { newId = parsed.args[0].toString(); break; }
         } catch(e) {}
       }
-      setStatus(`Capsule #${newId} sealed on Base`, 'ok');
+      setStatus('Capsule #' + newId + ' sealed!', 'ok');
       msgInput.value = '';
-      document.getElementById('charCount').textContent = '0';
       dateInput.value = '';
       await loadTotal();
     } catch(e) {
-      let msg = e.message || String(e);
-      if (msg.includes('user rejected')) msg = 'Transaction rejected';
-      else if (msg.includes('insufficient funds')) msg = 'Insufficient ETH for gas';
-      setStatus(msg.slice(0,90), 'err');
+      let errMsg = e.message || String(e);
+      if (errMsg.includes('user rejected')) errMsg = 'Transaction rejected';
+      else if (errMsg.includes('insufficient funds')) errMsg = 'Insufficient ETH for gas';
+      setStatus(errMsg.slice(0,90), 'err');
     }
   }
 
@@ -611,71 +226,56 @@ async function startApp() {
     if (id === '') return;
     if (!readContract) {
       if (!await initReadContract()) {
-        const el = document.getElementById('capsuleResult');
-        el.innerHTML = '<div class="capsule-card"><p class="locked-placeholder">Cannot connect to blockchain</p></div>';
+        capsuleResult.innerHTML = '<div class="capsule-card"><p>Cannot connect to blockchain</p></div>';
         return;
       }
     }
     try {
       const timeLeft = await readContract.timeUntilUnlock(BigInt(id));
-      const el = document.getElementById('capsuleResult');
       if (timeLeft > 0n) {
-        const secs = Number(timeLeft);
-        const d = Math.floor(secs/86400);
-        const h = Math.floor((secs%86400)/3600);
-        const m = Math.floor((secs%3600)/60);
-        el.innerHTML = `
+        const seconds = Number(timeLeft);
+        const days = Math.floor(seconds / 86400);
+        const hours = Math.floor((seconds % 86400) / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        capsuleResult.innerHTML = `
           <div class="capsule-card locked">
-            <div class="capsule-meta">
-              <span class="badge locked">Locked</span>
-              <span class="capsule-id">#${id}</span>
-            </div>
-            <p class="locked-placeholder">This capsule is sealed.</p>
-            <div class="capsule-footer">
-              <span class="countdown">Opens in ${d}d ${h}h ${m}m</span>
-            </div>
+            <div><span class="badge locked">Locked</span> <span style="font-size:12px;color:#787878;font-family:'Space Mono',monospace">#${id}</span></div>
+            <div class="capsule-footer">Opens in ${days}d ${hours}h ${mins}m</div>
           </div>`;
       } else {
         const [author, message, unlockTime] = await readContract.readCapsule(BigInt(id));
-        const _d = new Date(Number(unlockTime)*1000);
-        const _months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        const date = _months[_d.getMonth()] + ' ' + _d.getDate() + ', ' + _d.getFullYear();
-        el.innerHTML = `
-          <div class="capsule-card unlocked">
-            <div class="capsule-meta">
-              <span class="badge unlocked">Unlocked</span>
-              <span class="capsule-id">#${id}</span>
-            </div>
-            <p class="capsule-message"></p>
-            <div class="capsule-footer">
-              <span>${author.slice(0,6)}...${author.slice(-4)}</span>
-              <span>${date}</span>
-            </div>
-          </div>`;
-        el.querySelector('.capsule-message').textContent = message;
+        const date = formatDate(Number(unlockTime));
+        const card = document.createElement('div');
+        card.className = 'capsule-card unlocked';
+        card.innerHTML = `
+          <div><span class="badge unlocked">Unlocked</span> <span style="font-size:12px;color:#787878;font-family:'Space Mono',monospace">#${id}</span></div>
+          <p class="msg-text" style="margin:12px 0;font-size:14px;line-height:1.7"></p>
+          <div class="capsule-footer"><span>${author.slice(0,6)}...${author.slice(-4)}</span><span>${date}</span></div>`;
+        card.querySelector('.msg-text').textContent = message;
+        capsuleResult.innerHTML = '';
+        capsuleResult.appendChild(card);
       }
     } catch(e) {
-      const el = document.getElementById('capsuleResult');
-      el.innerHTML = '<div class="capsule-card"><p class="locked-placeholder"></p></div>';
-      el.querySelector('p').textContent = e.reason || 'Capsule not found';
+      const card = document.createElement('div');
+      card.className = 'capsule-card';
+      const p = document.createElement('p');
+      p.style.color = '#787878';
+      p.textContent = e.reason || 'Capsule not found';
+      card.appendChild(p);
+      capsuleResult.innerHTML = '';
+      capsuleResult.appendChild(card);
     }
   }
 
-  // Wire up UI first — before any async calls
+  // UI events
   document.getElementById('dateInput').min = new Date(Date.now()+60000).toISOString().slice(0,16);
   connectBtn.onclick = connectWallet;
   createBtn.onclick = createCapsule;
   readBtn.onclick = readCapsule;
   capsuleIdInput.onkeypress = (e) => e.key === 'Enter' && readCapsule();
 
-  // Load total in background — errors here must not affect UI
-  (async () => {
-    try {
-      const p = new ethers.JsonRpcProvider('https://mainnet.base.org');
-      readContract = new ethers.Contract(CONTRACT, ABI, p);
-      await loadTotal();
-    } catch(e) {}
-  })();
+  if (await initReadContract()) await loadTotal();
+  else totalBadge.innerHTML = '📦 Total capsules: (RPC offline)';
 }
 </script>
 </body>
