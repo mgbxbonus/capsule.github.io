@@ -1,0 +1,292 @@
+Отлично, контракт вижу. Ниже готовый фронтенд целиком — один HTML-файл. Заголовок и текст шифруются вместе одним блобом (JSON `{t, b}` → AES-GCM), так что контракт ничего о заголовках не знает. После входа автоматически грузится и расшифровывается вся история, скрытые заметки не показываются, у каждой есть кнопка «Скрыть» (`hideNote`, транзакция с газом — это в карточке подписано).
+
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Encrypted Notes — Base</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#fff;color:#000;font-family:'Inter',sans-serif;padding:0 16px 80px}
+  header{max-width:680px;margin:0 auto;padding:48px 0 40px;border-bottom:1px solid #DDE3E9}
+  .logo{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.2em;color:#787878}
+  .logo span{color:#0000FF;font-weight:700}
+  h1{font-family:'Space Mono',monospace;font-size:clamp(32px,6vw,52px);letter-spacing:-.03em;font-weight:700}
+  h1 em{color:#0000FF;font-style:normal}
+  .tagline{color:#787878;margin-top:12px;font-size:15px;line-height:1.6}
+  .connect-bar{margin-top:24px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{font-family:'Space Mono',monospace;padding:10px 22px;border-radius:999px;cursor:pointer;border:none;font-size:12px;transition:background .15s}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn-primary{background:#0000FF;color:#fff}
+  .btn-primary:hover:not(:disabled){background:#0000CC}
+  .btn-ghost{background:transparent;border:1.5px solid #000;color:#000}
+  .btn-ghost:hover:not(:disabled){background:#DDE3E9}
+  .btn-mini{font-family:'Space Mono',monospace;font-size:10px;padding:4px 12px;border-radius:999px;border:1.5px solid #CC0000;background:transparent;color:#CC0000;cursor:pointer}
+  .btn-mini:hover{background:#FFF0F0}
+  .btn-mini:disabled{opacity:.4;cursor:not-allowed}
+  .wallet-addr{font-family:'Space Mono',monospace;background:#DDE3E9;color:#000;padding:6px 14px;border-radius:999px;font-size:11px}
+  main{max-width:680px;margin:40px auto 0}
+  .form-card{background:#fff;border:1.5px solid #DDE3E9;border-radius:8px;padding:24px;margin-bottom:40px}
+  textarea,input[type="text"]{background:#F5F5F5;border:1.5px solid #DDE3E9;border-radius:6px;color:#000;padding:12px;width:100%;font-family:'Inter',sans-serif;font-size:14px;outline:none;transition:border-color .15s}
+  textarea{resize:vertical;min-height:120px;line-height:1.6;margin-top:10px}
+  textarea::placeholder,input::placeholder{color:#787878}
+  textarea:focus,input:focus{border-color:#0000FF}
+  .form-row{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:10px}
+  .size-hint{font-family:'Space Mono',monospace;font-size:10px;color:#787878}
+  .size-hint.over{color:#CC0000}
+  .status{margin-top:14px;font-size:12px;color:#787878;font-family:'Space Mono',monospace}
+  .status.ok{color:#007700}
+  .status.err{color:#CC0000}
+  .note-card{border:1.5px solid #DDE3E9;border-radius:8px;padding:20px;margin-bottom:12px;background:#fff}
+  .note-card.fail{border-color:#CC0000;background:#FFF8F8}
+  .note-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .note-title{font-family:'Space Mono',monospace;font-weight:700;font-size:15px;word-break:break-word}
+  .note-body{margin-top:10px;font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  .note-footer{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#787878;margin-top:14px;font-family:'Space Mono',monospace}
+  .section-title{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:#787878;margin-bottom:16px}
+  .network-warn{background:#FFF0F0;border:1.5px solid #CC0000;border-radius:8px;padding:12px;color:#CC0000;display:none;margin-bottom:20px;font-family:'Space Mono',monospace;font-size:12px}
+  .locked-hint{border:1.5px dashed #DDE3E9;border-radius:8px;padding:24px;text-align:center;color:#787878;font-size:13px}
+  #loadMoreBtn{display:none;margin:8px auto 0}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">On-chain · <span>Base Mainnet</span> · 0xbA12...284D</div>
+  <h1>Encrypted<br><em>Notes</em></h1>
+  <p class="tagline">Заметки шифруются вашим кошельком прямо в браузере. В блокчейн уходит только шифротекст — прочитать можете только вы.</p>
+  <div class="connect-bar">
+    <button class="btn btn-primary" id="connectBtn">Войти кошельком</button>
+    <div class="wallet-addr" id="walletAddr" style="display:none"></div>
+  </div>
+</header>
+
+<main>
+  <div class="network-warn" id="networkWarn">⚠ Переключитесь на Base Mainnet (chain 8453)</div>
+
+  <div class="form-card" id="formCard" style="display:none">
+    <input type="text" id="titleInput" placeholder="Заголовок" maxlength="120">
+    <textarea id="bodyInput" placeholder="Текст заметки..."></textarea>
+    <div class="form-row">
+      <span class="size-hint" id="sizeHint"></span>
+      <button class="btn btn-primary" id="createBtn">Зашифровать и отправить →</button>
+    </div>
+    <div class="status" id="createStatus"></div>
+  </div>
+
+  <div class="locked-hint" id="lockedHint">🔐 Подключите кошелёк и подпишите сообщение — появится форма и ваши заметки</div>
+
+  <div id="notesSection" style="display:none">
+    <div class="section-title" id="notesTitle">Мои заметки</div>
+    <div id="notesList"></div>
+    <button class="btn btn-ghost" id="loadMoreBtn">Загрузить ещё</button>
+  </div>
+</main>
+
+<script>
+(function waitForEthers() {
+  if (typeof ethers !== 'undefined') startApp();
+  else setTimeout(waitForEthers, 100);
+})();
+
+async function startApp() {
+  const CONTRACT = "0xbA124dBF9024A8826BBc65AD86E807b1264b284D";
+  const ABI = [
+    "function createNote(bytes data) external returns (uint256)",
+    "function hideNote(uint256 index) external",
+    "function noteCount(address owner) external view returns (uint256)",
+    "function getNotes(address owner, uint256 offset, uint256 limit) external view returns (tuple(uint64 createdAt, bool hidden, bytes data)[])",
+    "function totalNotes() external view returns (uint256)",
+    "event NoteCreated(address indexed author, uint256 indexed index, uint64 createdAt)"
+  ];
+  const BASE_CHAIN_ID = 8453;
+  const MAX_NOTE_BYTES = 8192;
+  const PAGE = 50;
+  const KEY_MESSAGE =
+    "EncryptedNotes v1\n" +
+    "Key derivation signature.\n" +
+    "Contract: " + CONTRACT + "\n" +
+    "Chain: Base (8453)\n" +
+    "Never sign this message on any other website.";
+
+  let signer = null;
+  let contract = null;
+  let aesKey = null;
+  let myAddress = null;
+  let totalMine = 0;     // сколько всего заметок у юзера on-chain
+  let loadedFrom = 0;    // индекс, до которого уже догрузили (грузим с конца)
+
+  const $ = id => document.getElementById(id);
+  const connectBtn = $('connectBtn'), walletAddr = $('walletAddr'),
+        formCard = $('formCard'), lockedHint = $('lockedHint'),
+        titleInput = $('titleInput'), bodyInput = $('bodyInput'),
+        createBtn = $('createBtn'), createStatus = $('createStatus'),
+        sizeHint = $('sizeHint'), notesSection = $('notesSection'),
+        notesList = $('notesList'), notesTitle = $('notesTitle'),
+        loadMoreBtn = $('loadMoreBtn'), networkWarn = $('networkWarn');
+
+  function setStatus(msg, type = '') {
+    createStatus.textContent = msg;
+    createStatus.className = 'status ' + type;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
+  }
+
+  // ---------- сеть ----------
+  async function switchToBase() {
+    try {
+      await window.ethereum.request({ method:'wallet_switchEthereumChain', params:[{ chainId:'0x2105' }] });
+      return true;
+    } catch(e) {
+      if (e.code === 4902) {
+        try {
+          await window.ethereum.request({ method:'wallet_addEthereumChain', params:[{
+            chainId:'0x2105', chainName:'Base Mainnet',
+            nativeCurrency:{ name:'ETH', symbol:'ETH', decimals:18 },
+            rpcUrls:['https://mainnet.base.org'], blockExplorerUrls:['https://basescan.org']
+          }]});
+          return true;
+        } catch(e2) { return false; }
+      }
+      return false;
+    }
+  }
+
+  // ---------- крипта ----------
+  async function deriveKey() {
+    const sig = await signer.signMessage(KEY_MESSAGE);
+    const bits = await crypto.subtle.digest("SHA-256", ethers.getBytes(sig));
+    aesKey = await crypto.subtle.importKey("raw", bits, "AES-GCM", false, ["encrypt","decrypt"]);
+  }
+
+  async function encryptNote(title, body) {
+    const plain = new TextEncoder().encode(JSON.stringify({ t: title, b: body }));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name:"AES-GCM", iv }, aesKey, plain);
+    const blob = new Uint8Array(12 + ct.byteLength);
+    blob.set(iv, 0);
+    blob.set(new Uint8Array(ct), 12);
+    return blob;
+  }
+
+  async function decryptNote(dataHex) {
+    const blob = ethers.getBytes(dataHex);
+    if (blob.length < 13) throw new Error("too short");
+    const iv = blob.slice(0, 12), ct = blob.slice(12);
+    const plain = await crypto.subtle.decrypt({ name:"AES-GCM", iv }, aesKey, ct);
+    const obj = JSON.parse(new TextDecoder().decode(plain));
+    return { title: obj.t || "", body: obj.b || "" };
+  }
+
+  // ---------- размер ----------
+  function estimateSize() {
+    const plain = new TextEncoder().encode(JSON.stringify({ t: titleInput.value, b: bodyInput.value }));
+    return 12 + plain.length + 16; // IV + plaintext + GCM tag
+  }
+  function updateSizeHint() {
+    const sz = estimateSize();
+    sizeHint.textContent = sz + " / " + MAX_NOTE_BYTES + " байт";
+    sizeHint.className = "size-hint" + (sz > MAX_NOTE_BYTES ? " over" : "");
+    createBtn.disabled = sz > MAX_NOTE_BYTES;
+  }
+  titleInput.oninput = updateSizeHint;
+  bodyInput.oninput = updateSizeHint;
+
+  // ---------- вход ----------
+  async function connectWallet() {
+    if (!window.ethereum) { alert("EVM-кошелёк не найден"); return; }
+    try {
+      connectBtn.disabled = true;
+      let provider = new ethers.BrowserProvider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      let network = await provider.getNetwork();
+      if (Number(network.chainId) !== BASE_CHAIN_ID) {
+        networkWarn.style.display = 'block';
+        const ok = await switchToBase();
+        if (!ok) { connectBtn.disabled = false; return; }
+        provider = new ethers.BrowserProvider(window.ethereum);
+      }
+      networkWarn.style.display = 'none';
+      signer = await provider.getSigner();
+      myAddress = await signer.getAddress();
+
+      lockedHint.textContent = "✍️ Подпишите сообщение в кошельке — из подписи будет получен ключ шифрования (бесплатно, без газа)";
+      await deriveKey();
+
+      contract = new ethers.Contract(CONTRACT, ABI, signer);
+
+      walletAddr.textContent = myAddress.slice(0,6) + '...' + myAddress.slice(-4);
+      walletAddr.style.display = 'block';
+      connectBtn.style.display = 'none';
+      lockedHint.style.display = 'none';
+      formCard.style.display = 'block';
+      notesSection.style.display = 'block';
+      updateSizeHint();
+      setStatus('✅ Ключ получен, можно писать', 'ok');
+
+      await loadHistory(true);
+    } catch(e) {
+      connectBtn.disabled = false;
+      lockedHint.textContent = "🔐 Подключите кошелёк и подпишите сообщение — появится форма и ваши заметки";
+      alert("Вход не выполнен: " + (e.shortMessage || e.message || e).toString().slice(0,120));
+    }
+  }
+
+  // ---------- история ----------
+  async function loadHistory(reset) {
+    if (reset) {
+      notesList.innerHTML = '<div class="locked-hint">⏳ Загрузка заметок...</div>';
+      totalMine = Number(await contract.noteCount(myAddress));
+      loadedFrom = totalMine;
+      notesList.innerHTML = '';
+    }
+    notesTitle.textContent = "Мои заметки (" + totalMine + " on-chain)";
+    if (totalMine === 0) {
+      notesList.innerHTML = '<div class="locked-hint">Пока пусто. Первая заметка — выше ⬆</div>';
+      loadMoreBtn.style.display = 'none';
+      return;
+    }
+    // грузим страницу с конца (новые сверху)
+    const offset = Math.max(0, loadedFrom - PAGE);
+    const limit = loadedFrom - offset;
+    const page = await contract.getNotes(myAddress, offset, limit);
+    // в page индексы offset..offset+limit-1; рендерим в обратном порядке
+    for (let i = page.length - 1; i >= 0; i--) {
+      await renderNote(offset + i, page[i]);
+    }
+    loadedFrom = offset;
+    loadMoreBtn.style.display = loadedFrom > 0 ? 'block' : 'none';
+  }
+
+  async function renderNote(index, note) {
+    const createdAt = Number(note.createdAt ?? note[0]);
+    const hidden = Boolean(note.hidden ?? note[1]);
+    const data = note.data ?? note[2];
+    if (hidden) return;
+
+    const card = document.createElement('div');
+    card.className = 'note-card';
+    const dateStr = new Date(createdAt * 1000).toLocaleString();
+    let inner;
+    try {
+      const { title, body } = await decryptNote(data);
+      inner = `
+        <div class="note-head">
+          <div class="note-title">${escapeHtml(title) || '(без заголовка)'}</div>
+          <button class="btn-mini" data-idx="${index}">Скрыть</button>
+        </div>
+        <div class="note-body">${escapeHtml(body)}</div>
+        <div class="note-footer"><span>#${index}</span><span>📅 ${dateStr}</span></div>`;
+    } catch(e) {
+      card.classList.add('fail');
+      inner = `
+        <div class="note-head">
+          <div class="note-title">🔒 Не удалось расшифровать</div>
+          <button class="btn-mini" data-idx="${index}">
