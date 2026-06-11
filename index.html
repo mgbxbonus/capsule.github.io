@@ -661,17 +661,21 @@ async function startApp() {
     }
   }
 
+  // Wire up UI first — before any async calls
   document.getElementById('dateInput').min = new Date(Date.now()+60000).toISOString().slice(0,16);
   connectBtn.onclick = connectWallet;
   createBtn.onclick = createCapsule;
   readBtn.onclick = readCapsule;
   capsuleIdInput.onkeypress = (e) => e.key === 'Enter' && readCapsule();
 
-  try {
-    const p = new ethers.JsonRpcProvider('https://mainnet.base.org');
-    readContract = new ethers.Contract(CONTRACT, ABI, p);
-    loadTotal();
-  } catch(e) {}
+  // Load total in background — errors here must not affect UI
+  (async () => {
+    try {
+      const p = new ethers.JsonRpcProvider('https://mainnet.base.org');
+      readContract = new ethers.Contract(CONTRACT, ABI, p);
+      await loadTotal();
+    } catch(e) {}
+  })();
 }
 </script>
 </body>
