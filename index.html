@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -54,32 +54,32 @@
 <header>
   <div class="logo">On-chain · <span>Base Mainnet</span> · 0xbA12...284D</div>
   <h1>Encrypted<br><em>Notes</em></h1>
-  <p class="tagline">Заметки шифруются вашим кошельком прямо в браузере. В блокчейн уходит только шифротекст — прочитать можете только вы.</p>
+  <p class="tagline">Notes are encrypted by your wallet in the browser. Only the ciphertext is stored on-chain — only you can read it.</p>
   <div class="connect-bar">
-    <button class="btn btn-primary" id="connectBtn">Войти кошельком</button>
+    <button class="btn btn-primary" id="connectBtn">Connect Wallet</button>
     <div class="wallet-addr" id="walletAddr" style="display:none"></div>
   </div>
 </header>
 
 <main>
-  <div class="network-warn" id="networkWarn">⚠ Переключитесь на Base Mainnet (chain 8453)</div>
+  <div class="network-warn" id="networkWarn">⚠ Please switch to Base Mainnet (chain 8453)</div>
 
   <div class="form-card" id="formCard" style="display:none">
-    <input type="text" id="titleInput" placeholder="Заголовок" maxlength="120">
-    <textarea id="bodyInput" placeholder="Текст заметки..."></textarea>
+    <input type="text" id="titleInput" placeholder="Title" maxlength="120">
+    <textarea id="bodyInput" placeholder="Note body..."></textarea>
     <div class="form-row">
       <span class="size-hint" id="sizeHint"></span>
-      <button class="btn btn-primary" id="createBtn">Зашифровать и отправить →</button>
+      <button class="btn btn-primary" id="createBtn">Encrypt &amp; Publish →</button>
     </div>
     <div class="status" id="createStatus"></div>
   </div>
 
-  <div class="locked-hint" id="lockedHint">🔐 Подключите кошелёк и подпишите сообщение — появится форма и ваши заметки</div>
+  <div class="locked-hint" id="lockedHint">🔐 Connect your wallet and sign a message — the form and your notes will appear</div>
 
   <div id="notesSection" style="display:none">
-    <div class="section-title" id="notesTitle">Мои заметки</div>
+    <div class="section-title" id="notesTitle">My Notes</div>
     <div id="notesList"></div>
-    <button class="btn btn-ghost" id="loadMoreBtn">Загрузить ещё</button>
+    <button class="btn btn-ghost" id="loadMoreBtn">Load more</button>
   </div>
 </main>
 
@@ -113,8 +113,8 @@ async function startApp() {
   let contract = null;
   let aesKey = null;
   let myAddress = null;
-  let totalMine = 0;   // сколько всего заметок у юзера on-chain
-  let loadedFrom = 0;  // индекс, до которого уже догрузили (грузим с конца)
+  let totalMine = 0;
+  let loadedFrom = 0;
 
   const $ = id => document.getElementById(id);
   const connectBtn = $('connectBtn'), walletAddr = $('walletAddr'),
@@ -136,7 +136,7 @@ async function startApp() {
     }[m]));
   }
 
-  // ---------- сеть ----------
+  // ---------- network ----------
   async function switchToBase() {
     try {
       await window.ethereum.request({ method:'wallet_switchEthereumChain', params:[{ chainId:'0x2105' }] });
@@ -156,7 +156,7 @@ async function startApp() {
     }
   }
 
-  // ---------- крипта ----------
+  // ---------- crypto ----------
   async function deriveKey() {
     const sig = await signer.signMessage(KEY_MESSAGE);
     const bits = await crypto.subtle.digest("SHA-256", ethers.getBytes(sig));
@@ -182,23 +182,23 @@ async function startApp() {
     return { title: obj.t || "", body: obj.b || "" };
   }
 
-  // ---------- размер ----------
+  // ---------- size ----------
   function estimateSize() {
     const plain = new TextEncoder().encode(JSON.stringify({ t: titleInput.value, b: bodyInput.value }));
-    return 12 + plain.length + 16; // IV + plaintext + GCM tag
+    return 12 + plain.length + 16;
   }
   function updateSizeHint() {
     const sz = estimateSize();
-    sizeHint.textContent = sz + " / " + MAX_NOTE_BYTES + " байт";
+    sizeHint.textContent = sz + " / " + MAX_NOTE_BYTES + " bytes";
     sizeHint.className = "size-hint" + (sz > MAX_NOTE_BYTES ? " over" : "");
     createBtn.disabled = sz > MAX_NOTE_BYTES;
   }
   titleInput.oninput = updateSizeHint;
   bodyInput.oninput = updateSizeHint;
 
-  // ---------- вход ----------
+  // ---------- connect ----------
   async function connectWallet() {
-    if (!window.ethereum) { alert("EVM-кошелёк не найден"); return; }
+    if (!window.ethereum) { alert("No EVM wallet found"); return; }
     try {
       connectBtn.disabled = true;
       let provider = new ethers.BrowserProvider(window.ethereum);
@@ -214,7 +214,7 @@ async function startApp() {
       signer = await provider.getSigner();
       myAddress = await signer.getAddress();
 
-      lockedHint.textContent = "✍️ Подпишите сообщение в кошельке — из подписи будет получен ключ шифрования (бесплатно, без газа)";
+      lockedHint.textContent = "✍️ Sign the message in your wallet — the encryption key will be derived from your signature (free, no gas)";
       await deriveKey();
 
       contract = new ethers.Contract(CONTRACT, ABI, signer);
@@ -226,35 +226,33 @@ async function startApp() {
       formCard.style.display = 'block';
       notesSection.style.display = 'block';
       updateSizeHint();
-      setStatus('✅ Ключ получен, можно писать', 'ok');
+      setStatus('✅ Key derived — ready to write', 'ok');
 
       await loadHistory(true);
     } catch(e) {
       connectBtn.disabled = false;
-      lockedHint.textContent = "🔐 Подключите кошелёк и подпишите сообщение — появится форма и ваши заметки";
-      alert("Вход не выполнен: " + (e.shortMessage || e.message || e).toString().slice(0,120));
+      lockedHint.textContent = "🔐 Connect your wallet and sign a message — the form and your notes will appear";
+      alert("Login failed: " + (e.shortMessage || e.message || e).toString().slice(0,120));
     }
   }
 
-  // ---------- история ----------
+  // ---------- history ----------
   async function loadHistory(reset) {
     if (reset) {
-      notesList.innerHTML = '<div class="locked-hint">⏳ Загрузка заметок...</div>';
+      notesList.innerHTML = '<div class="locked-hint">⏳ Loading notes...</div>';
       totalMine = Number(await contract.noteCount(myAddress));
       loadedFrom = totalMine;
       notesList.innerHTML = '';
     }
-    notesTitle.textContent = "Мои заметки (" + totalMine + " on-chain)";
+    notesTitle.textContent = "My Notes (" + totalMine + " on-chain)";
     if (totalMine === 0) {
-      notesList.innerHTML = '<div class="locked-hint">Пока пусто. Первая заметка — выше ⬆</div>';
+      notesList.innerHTML = '<div class="locked-hint">Nothing yet. Write your first note above ⬆</div>';
       loadMoreBtn.style.display = 'none';
       return;
     }
-    // грузим страницу с конца (новые сверху)
     const offset = Math.max(0, loadedFrom - PAGE);
     const limit = loadedFrom - offset;
     const page = await contract.getNotes(myAddress, offset, limit);
-    // page содержит индексы offset..offset+limit-1; рендерим в обратном порядке
     for (let i = page.length - 1; i >= 0; i--) {
       await renderNote(offset + i, page[i]);
     }
@@ -270,13 +268,13 @@ async function startApp() {
 
     const card = document.createElement('div');
     card.className = 'note-card';
-    const dateStr = new Date(createdAt * 1000).toLocaleString();
+    const dateStr = new Date(createdAt * 1000).toLocaleString('en-GB');
     try {
       const { title, body } = await decryptNote(data);
       card.innerHTML = `
         <div class="note-head">
-          <div class="note-title">${escapeHtml(title) || '(без заголовка)'}</div>
-          <button class="btn-mini" data-idx="${index}">Скрыть</button>
+          <div class="note-title">${escapeHtml(title) || '(no title)'}</div>
+          <button class="btn-mini" data-idx="${index}">Hide</button>
         </div>
         <div class="note-body">${escapeHtml(body)}</div>
         <div class="note-footer"><span>#${index}</span><span>📅 ${dateStr}</span></div>`;
@@ -284,10 +282,10 @@ async function startApp() {
       card.classList.add('fail');
       card.innerHTML = `
         <div class="note-head">
-          <div class="note-title">🔒 Не удалось расшифровать</div>
-          <button class="btn-mini" data-idx="${index}">Скрыть</button>
+          <div class="note-title">🔒 Could not decrypt</div>
+          <button class="btn-mini" data-idx="${index}">Hide</button>
         </div>
-        <div class="note-body" style="color:#787878;font-size:12px">Заметка создана другим ключом или повреждена.</div>
+        <div class="note-body" style="color:#787878;font-size:12px">This note was created with a different key or is corrupted.</div>
         <div class="note-footer"><span>#${index}</span><span>📅 ${dateStr}</span></div>`;
     }
     card.querySelector('.btn-mini').onclick = (ev) => hideNoteOnChain(index, ev.target, card);
@@ -295,7 +293,7 @@ async function startApp() {
   }
 
   async function hideNoteOnChain(index, btn, card) {
-    if (!confirm("Скрыть заметку #" + index + "?\n\nЭто транзакция в блокчейне (потребуется газ). Заметка исчезнет из ленты, но физически останется on-chain в зашифрованном виде навсегда.")) return;
+    if (!confirm("Hide note #" + index + "?\n\nThis is an on-chain transaction (gas required). The note will disappear from your feed but remain on-chain in encrypted form forever.")) return;
     try {
       btn.disabled = true;
       btn.textContent = "⏳...";
@@ -305,28 +303,28 @@ async function startApp() {
       card.remove();
     } catch(e) {
       btn.disabled = false;
-      btn.textContent = "Скрыть";
+      btn.textContent = "Hide";
       let m = e.shortMessage || e.message || String(e);
-      if (m.includes('user rejected') || m.includes('rejected')) m = 'Отменено';
-      alert("Не удалось скрыть: " + m.slice(0,100));
+      if (m.includes('user rejected') || m.includes('rejected')) m = 'Cancelled';
+      alert("Failed to hide: " + m.slice(0,100));
     }
   }
 
-  // ---------- создание ----------
+  // ---------- create ----------
   async function createNote() {
-    if (!contract || !aesKey) return setStatus('Сначала войдите кошельком', 'err');
+    if (!contract || !aesKey) return setStatus('Connect your wallet first', 'err');
     const title = titleInput.value.trim();
     const body = bodyInput.value.trim();
-    if (!title && !body) return setStatus('Заметка пустая', 'err');
-    if (estimateSize() > MAX_NOTE_BYTES) return setStatus('Слишком длинная заметка', 'err');
+    if (!title && !body) return setStatus('Note is empty', 'err');
+    if (estimateSize() > MAX_NOTE_BYTES) return setStatus('Note is too long', 'err');
 
     try {
       createBtn.disabled = true;
-      setStatus('🔐 Шифрование...');
+      setStatus('🔐 Encrypting...');
       const blob = await encryptNote(title, body);
-      setStatus('✍️ Подтвердите транзакцию в кошельке...');
+      setStatus('✍️ Confirm the transaction in your wallet...');
       const tx = await contract.createNote(blob);
-      setStatus('⏳ Tx: ' + tx.hash.slice(0,10) + '... ждём подтверждения');
+      setStatus('⏳ Tx: ' + tx.hash.slice(0,10) + '... waiting for confirmation');
       const receipt = await tx.wait();
       let newIndex = '?';
       for (const log of receipt.logs) {
@@ -335,15 +333,15 @@ async function startApp() {
           if (parsed?.name === 'NoteCreated') { newIndex = parsed.args[1].toString(); break; }
         } catch(e) {}
       }
-      setStatus('✅ Заметка #' + newIndex + ' сохранена on-chain', 'ok');
+      setStatus('✅ Note #' + newIndex + ' saved on-chain', 'ok');
       titleInput.value = '';
       bodyInput.value = '';
       updateSizeHint();
       await loadHistory(true);
     } catch(e) {
       let m = e.shortMessage || e.message || String(e);
-      if (m.includes('user rejected') || m.includes('rejected')) m = 'Транзакция отменена';
-      else if (m.includes('insufficient funds')) m = 'Недостаточно ETH на газ';
+      if (m.includes('user rejected') || m.includes('rejected')) m = 'Transaction cancelled';
+      else if (m.includes('insufficient funds')) m = 'Insufficient ETH for gas';
       setStatus('❌ ' + m.slice(0,90), 'err');
     } finally {
       createBtn.disabled = false;
@@ -351,7 +349,7 @@ async function startApp() {
     }
   }
 
-  // ---------- смена аккаунта/сети ----------
+  // ---------- account/chain change ----------
   if (window.ethereum) {
     window.ethereum.on?.('accountsChanged', () => location.reload());
     window.ethereum.on?.('chainChanged', () => location.reload());
