@@ -1,6 +1,3 @@
-Отлично, контракт вижу. Ниже готовый фронтенд целиком — один HTML-файл. Заголовок и текст шифруются вместе одним блобом (JSON `{t, b}` → AES-GCM), так что контракт ничего о заголовках не знает. После входа автоматически грузится и расшифровывается вся история, скрытые заметки не показываются, у каждой есть кнопка «Скрыть» (`hideNote`, транзакция с газом — это в карточке подписано).
-
-```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -25,7 +22,7 @@
   .btn-primary:hover:not(:disabled){background:#0000CC}
   .btn-ghost{background:transparent;border:1.5px solid #000;color:#000}
   .btn-ghost:hover:not(:disabled){background:#DDE3E9}
-  .btn-mini{font-family:'Space Mono',monospace;font-size:10px;padding:4px 12px;border-radius:999px;border:1.5px solid #CC0000;background:transparent;color:#CC0000;cursor:pointer}
+  .btn-mini{font-family:'Space Mono',monospace;font-size:10px;padding:4px 12px;border-radius:999px;border:1.5px solid #CC0000;background:transparent;color:#CC0000;cursor:pointer;flex-shrink:0}
   .btn-mini:hover{background:#FFF0F0}
   .btn-mini:disabled{opacity:.4;cursor:not-allowed}
   .wallet-addr{font-family:'Space Mono',monospace;background:#DDE3E9;color:#000;padding:6px 14px;border-radius:999px;font-size:11px}
@@ -38,7 +35,7 @@
   .form-row{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:10px}
   .size-hint{font-family:'Space Mono',monospace;font-size:10px;color:#787878}
   .size-hint.over{color:#CC0000}
-  .status{margin-top:14px;font-size:12px;color:#787878;font-family:'Space Mono',monospace}
+  .status{margin-top:14px;font-size:12px;color:#787878;font-family:'Space Mono',monospace;word-break:break-word}
   .status.ok{color:#007700}
   .status.err{color:#CC0000}
   .note-card{border:1.5px solid #DDE3E9;border-radius:8px;padding:20px;margin-bottom:12px;background:#fff}
@@ -116,8 +113,8 @@ async function startApp() {
   let contract = null;
   let aesKey = null;
   let myAddress = null;
-  let totalMine = 0;     // сколько всего заметок у юзера on-chain
-  let loadedFrom = 0;    // индекс, до которого уже догрузили (грузим с конца)
+  let totalMine = 0;   // сколько всего заметок у юзера on-chain
+  let loadedFrom = 0;  // индекс, до которого уже догрузили (грузим с конца)
 
   const $ = id => document.getElementById(id);
   const connectBtn = $('connectBtn'), walletAddr = $('walletAddr'),
@@ -257,7 +254,7 @@ async function startApp() {
     const offset = Math.max(0, loadedFrom - PAGE);
     const limit = loadedFrom - offset;
     const page = await contract.getNotes(myAddress, offset, limit);
-    // в page индексы offset..offset+limit-1; рендерим в обратном порядке
+    // page содержит индексы offset..offset+limit-1; рендерим в обратном порядке
     for (let i = page.length - 1; i >= 0; i--) {
       await renderNote(offset + i, page[i]);
     }
@@ -274,10 +271,9 @@ async function startApp() {
     const card = document.createElement('div');
     card.className = 'note-card';
     const dateStr = new Date(createdAt * 1000).toLocaleString();
-    let inner;
     try {
       const { title, body } = await decryptNote(data);
-      inner = `
+      card.innerHTML = `
         <div class="note-head">
           <div class="note-title">${escapeHtml(title) || '(без заголовка)'}</div>
           <button class="btn-mini" data-idx="${index}">Скрыть</button>
@@ -286,7 +282,86 @@ async function startApp() {
         <div class="note-footer"><span>#${index}</span><span>📅 ${dateStr}</span></div>`;
     } catch(e) {
       card.classList.add('fail');
-      inner = `
+      card.innerHTML = `
         <div class="note-head">
           <div class="note-title">🔒 Не удалось расшифровать</div>
-          <button class="btn-mini" data-idx="${index}">
+          <button class="btn-mini" data-idx="${index}">Скрыть</button>
+        </div>
+        <div class="note-body" style="color:#787878;font-size:12px">Заметка создана другим ключом или повреждена.</div>
+        <div class="note-footer"><span>#${index}</span><span>📅 ${dateStr}</span></div>`;
+    }
+    card.querySelector('.btn-mini').onclick = (ev) => hideNoteOnChain(index, ev.target, card);
+    notesList.appendChild(card);
+  }
+
+  async function hideNoteOnChain(index, btn, card) {
+    if (!confirm("Скрыть заметку #" + index + "?\n\nЭто транзакция в блокчейне (потребуется газ). Заметка исчезнет из ленты, но физически останется on-chain в зашифрованном виде навсегда.")) return;
+    try {
+      btn.disabled = true;
+      btn.textContent = "⏳...";
+      const tx = await contract.hideNote(index);
+      btn.textContent = "⏳ tx...";
+      await tx.wait();
+      card.remove();
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = "Скрыть";
+      let m = e.shortMessage || e.message || String(e);
+      if (m.includes('user rejected') || m.includes('rejected')) m = 'Отменено';
+      alert("Не удалось скрыть: " + m.slice(0,100));
+    }
+  }
+
+  // ---------- создание ----------
+  async function createNote() {
+    if (!contract || !aesKey) return setStatus('Сначала войдите кошельком', 'err');
+    const title = titleInput.value.trim();
+    const body = bodyInput.value.trim();
+    if (!title && !body) return setStatus('Заметка пустая', 'err');
+    if (estimateSize() > MAX_NOTE_BYTES) return setStatus('Слишком длинная заметка', 'err');
+
+    try {
+      createBtn.disabled = true;
+      setStatus('🔐 Шифрование...');
+      const blob = await encryptNote(title, body);
+      setStatus('✍️ Подтвердите транзакцию в кошельке...');
+      const tx = await contract.createNote(blob);
+      setStatus('⏳ Tx: ' + tx.hash.slice(0,10) + '... ждём подтверждения');
+      const receipt = await tx.wait();
+      let newIndex = '?';
+      for (const log of receipt.logs) {
+        try {
+          const parsed = contract.interface.parseLog(log);
+          if (parsed?.name === 'NoteCreated') { newIndex = parsed.args[1].toString(); break; }
+        } catch(e) {}
+      }
+      setStatus('✅ Заметка #' + newIndex + ' сохранена on-chain', 'ok');
+      titleInput.value = '';
+      bodyInput.value = '';
+      updateSizeHint();
+      await loadHistory(true);
+    } catch(e) {
+      let m = e.shortMessage || e.message || String(e);
+      if (m.includes('user rejected') || m.includes('rejected')) m = 'Транзакция отменена';
+      else if (m.includes('insufficient funds')) m = 'Недостаточно ETH на газ';
+      setStatus('❌ ' + m.slice(0,90), 'err');
+    } finally {
+      createBtn.disabled = false;
+      updateSizeHint();
+    }
+  }
+
+  // ---------- смена аккаунта/сети ----------
+  if (window.ethereum) {
+    window.ethereum.on?.('accountsChanged', () => location.reload());
+    window.ethereum.on?.('chainChanged', () => location.reload());
+  }
+
+  // ---------- events ----------
+  connectBtn.onclick = connectWallet;
+  createBtn.onclick = createNote;
+  loadMoreBtn.onclick = () => loadHistory(false);
+}
+</script>
+</body>
+</html>
