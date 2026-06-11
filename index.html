@@ -6,35 +6,43 @@
 <title>Time Capsule — Base (Fixed)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 <style>
-  /* (стили такие же, как в прошлый раз, не менялись) */
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500&display=swap');
   *{margin:0;padding:0;box-sizing:border-box}
-  body{background:#0a0a0f;color:#e8e8f0;font-family:'Inter',sans-serif;padding:0 16px 80px}
-  header{max-width:680px;margin:0 auto;padding:48px 0 40px;border-bottom:1px solid #1e1e2e}
-  .logo{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.2em;color:#5a5a72}
-  .logo span{color:#5b6af0}
-  h1{font-family:'Space Mono',monospace;font-size:clamp(28px,5vw,42px);letter-spacing:-.02em}
-  h1 em{color:#5b6af0;font-style:normal}
-  .tagline{color:#5a5a72;margin-top:12px}
-  .btn{font-family:'Space Mono',monospace;padding:10px 20px;border-radius:6px;cursor:pointer;border:none}
-  .btn-primary{background:#5b6af0;color:#fff}
-  .btn-ghost{background:0 0;border:1px solid #1e1e2e;color:#5a5a72}
-  .wallet-addr{font-family:'Space Mono',monospace;background:#0f2a1f;color:#3ddc84;padding:6px 12px;border-radius:4px}
+  body{background:#fff;color:#000;font-family:'Inter',sans-serif;padding:0 16px 80px}
+  header{max-width:680px;margin:0 auto;padding:48px 0 40px;border-bottom:1px solid #DDE3E9}
+  .logo{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.2em;color:#787878}
+  .logo span{color:#0000FF;font-weight:700}
+  h1{font-family:'Space Mono',monospace;font-size:clamp(32px,6vw,52px);letter-spacing:-.03em;font-weight:700}
+  h1 em{color:#0000FF;font-style:normal}
+  .tagline{color:#787878;margin-top:12px;font-size:15px;line-height:1.6}
+  .btn{font-family:'Space Mono',monospace;padding:10px 22px;border-radius:999px;cursor:pointer;border:none;font-size:12px;transition:background .15s}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn-primary{background:#0000FF;color:#fff}
+  .btn-primary:hover:not(:disabled){background:#0000CC}
+  .btn-ghost{background:transparent;border:1.5px solid #000;color:#000}
+  .btn-ghost:hover{background:#DDE3E9}
+  .wallet-addr{font-family:'Space Mono',monospace;background:#DDE3E9;color:#000;padding:6px 14px;border-radius:999px;font-size:11px}
   main{max-width:680px;margin:40px auto 0}
-  .form-card{background:#111118;border:1px solid #1e1e2e;border-radius:12px;padding:24px;margin-bottom:40px}
-  textarea,input{background:#0a0a0f;border:1px solid #1e1e2e;border-radius:8px;color:#e8e8f0;padding:12px;width:100%}
-  textarea:focus,input:focus{border-color:#5b6af0;outline:0}
+  .form-card{background:#fff;border:1.5px solid #DDE3E9;border-radius:8px;padding:24px;margin-bottom:40px}
+  textarea,input{background:#F5F5F5;border:1.5px solid #DDE3E9;border-radius:6px;color:#000;padding:12px;width:100%;font-family:'Inter',sans-serif;font-size:14px;outline:none;transition:border-color .15s}
+  textarea{resize:vertical;min-height:100px;line-height:1.6}
+  textarea::placeholder,input::placeholder{color:#787878}
+  textarea:focus,input:focus{border-color:#0000FF}
+  input[type="number"]{background:#fff;border:1.5px solid #000;font-family:'Space Mono',monospace;-moz-appearance:textfield}
+  input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type="datetime-local"]{color-scheme:light}
   .date-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:12px}
-  .status{margin-top:14px;font-size:12px;color:#5a5a72}
-  .status.ok{color:#3ddc84}
-  .status.err{color:#f07070}
-  .capsule-card{background:#111118;border-radius:12px;padding:20px;margin-bottom:12px;position:relative}
-  .capsule-card.locked{border-color:#2a1f4e;background:#0e0c18}
-  .capsule-card.unlocked{border-color:#1a3a2a;background:#0b160f}
-  .badge{font-size:9px;padding:3px 8px;border-radius:3px;font-family:'Space Mono',monospace}
-  .badge.locked{background:rgba(91,106,240,.15);color:#5b6af0}
-  .badge.unlocked{background:rgba(61,220,132,.1);color:#3ddc84}
-  .capsule-footer{display:flex;justify-content:space-between;font-size:11px;color:#5a5a72;margin-top:12px}
-  .network-warn{background:#3d1a1a;border:1px solid #f07070;border-radius:8px;padding:12px;color:#f07070;display:none;margin-bottom:20px}
+  .status{margin-top:14px;font-size:12px;color:#787878;font-family:'Space Mono',monospace}
+  .status.ok{color:#007700}
+  .status.err{color:#CC0000}
+  .capsule-card{border:1.5px solid #DDE3E9;border-radius:8px;padding:20px;margin-bottom:12px;background:#fff;position:relative;overflow:hidden}
+  .capsule-card.locked{border-color:#0000FF;background:#F0F0FF}
+  .capsule-card.unlocked{border-color:#A7E66B;background:#F5FFF0}
+  .badge{font-size:9px;padding:3px 10px;border-radius:999px;font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em}
+  .badge.locked{background:#0000FF;color:#fff}
+  .badge.unlocked{background:#A7E66B;color:#000}
+  .capsule-footer{display:flex;justify-content:space-between;font-size:11px;color:#787878;margin-top:12px;font-family:'Space Mono',monospace}
+  .network-warn{background:#FFF0F0;border:1.5px solid #CC0000;border-radius:8px;padding:12px;color:#CC0000;display:none;margin-bottom:20px;font-family:'Space Mono',monospace;font-size:12px}
 </style>
 </head>
 <body>
