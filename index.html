@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Time Capsule — Base (Fixed)</title>
+<title>Time Capsule — Base</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500&display=swap');
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:#fff;color:#000;font-family:'Inter',sans-serif;padding:0 16px 80px}
   header{max-width:680px;margin:0 auto;padding:48px 0 40px;border-bottom:1px solid #DDE3E9}
@@ -24,14 +25,18 @@
   .wallet-addr{font-family:'Space Mono',monospace;background:#DDE3E9;color:#000;padding:6px 14px;border-radius:999px;font-size:11px}
   main{max-width:680px;margin:40px auto 0}
   .form-card{background:#fff;border:1.5px solid #DDE3E9;border-radius:8px;padding:24px;margin-bottom:40px}
-  textarea,input{background:#F5F5F5;border:1.5px solid #DDE3E9;border-radius:6px;color:#000;padding:12px;width:100%;font-family:'Inter',sans-serif;font-size:14px;outline:none;transition:border-color .15s}
-  textarea{resize:vertical;min-height:100px;line-height:1.6}
-  textarea::placeholder,input::placeholder{color:#787878}
-  textarea:focus,input:focus{border-color:#0000FF}
-  input[type="number"]{background:#fff;border:1.5px solid #000;font-family:'Space Mono',monospace;-moz-appearance:textfield}
+  textarea{background:#F5F5F5;border:1.5px solid #DDE3E9;border-radius:6px;color:#000;padding:12px;width:100%;font-family:'Inter',sans-serif;font-size:14px;outline:none;transition:border-color .15s;resize:vertical;min-height:100px;line-height:1.6}
+  textarea::placeholder{color:#787878}
+  textarea:focus{border-color:#0000FF}
+  input{background:#F5F5F5;border:1.5px solid #DDE3E9;border-radius:6px;color:#000;padding:12px;font-family:'Inter',sans-serif;font-size:14px;outline:none;transition:border-color .15s}
+  input::placeholder{color:#787878}
+  input:focus{border-color:#0000FF}
+  input[type="datetime-local"]{width:100%;color-scheme:light}
+  input[type="number"]{width:100%;background:#fff;border:1.5px solid #000;color:#000;font-family:'Space Mono',monospace;-moz-appearance:textfield}
   input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-  input[type="datetime-local"]{color-scheme:light}
   .date-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:12px}
+  .read-row{display:flex;gap:10px;margin-bottom:20px}
+  .read-row input{flex:1;min-width:0}
   .status{margin-top:14px;font-size:12px;color:#787878;font-family:'Space Mono',monospace}
   .status.ok{color:#007700}
   .status.err{color:#CC0000}
@@ -66,8 +71,8 @@
     </div>
     <div class="status" id="createStatus"></div>
   </div>
-  <div style="display:flex;gap:10px;margin-bottom:20px">
-    <input type="number" id="capsuleIdInput" placeholder="Capsule ID" style="flex:1">
+  <div class="read-row">
+    <input type="number" id="capsuleIdInput" placeholder="Capsule ID">
     <button class="btn btn-ghost" id="readBtn">Read</button>
   </div>
   <div id="totalBadge" style="font-size:12px;margin-bottom:16px"></div>
@@ -75,10 +80,7 @@
 </main>
 
 <script>
-(function waitForEthers() {
-  if (typeof ethers !== 'undefined') startApp();
-  else setTimeout(waitForEthers, 100);
-})();
+document.addEventListener('DOMContentLoaded', () => startApp());
 
 async function startApp() {
   const CONTRACT = "0x36A9BFfc6116030459C7E9EE69d559f74BA08e69";
@@ -90,7 +92,7 @@ async function startApp() {
     "event CapsuleCreated(uint256 indexed id, address indexed author, uint256 unlockTime)"
   ];
   const BASE_CHAIN_ID = 8453;
-  const RPC_LIST = ["https://mainnet.base.org", "https://base.llamarpc.com", "https://base.publicnode.com"];
+  const RPC_LIST = ["https://mainnet.base.org", "https://base.llamarpc.com", "https://base.publicnode.com", "https://base-mainnet.g.alchemy.com/v2/demo", "https://1rpc.io/base"];
 
   let signerContract = null;
   let readContract = null;
@@ -112,13 +114,15 @@ async function startApp() {
     createStatus.className = 'status ' + type;
   }
 
-  // Инициализация read-контракта через любой работающий RPC
   async function initReadContract() {
     for (const rpc of RPC_LIST) {
       try {
         const provider = new ethers.JsonRpcProvider(rpc);
         const contract = new ethers.Contract(CONTRACT, ABI, provider);
-        await contract.totalCapsules(); // проверка
+        await Promise.race([
+          contract.totalCapsules(),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000))
+        ]);
         readContract = contract;
         return true;
       } catch(e) {}
@@ -175,7 +179,6 @@ async function startApp() {
       connectBtn.style.display = 'none';
       createBtn.disabled = false;
       setStatus('✅ Ready to seal', 'ok');
-      // Обновим read-contract с тем же провайдером для консистентности
       readContract = new ethers.Contract(CONTRACT, ABI, signer);
       await loadTotal();
     } catch(e) {
@@ -264,16 +267,15 @@ async function startApp() {
     }).replace(/\n/g, '<br>');
   }
 
-  // UI events
   document.getElementById('dateInput').min = new Date(Date.now()+60000).toISOString().slice(0,16);
   connectBtn.onclick = connectWallet;
   createBtn.onclick = createCapsule;
   readBtn.onclick = readCapsule;
-  capsuleIdInput.onkeypress = (e) => e.key === 'Enter' && readCapsule();
+  capsuleIdInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') readCapsule();
+  });
 
-  // Стартовая загрузка количества капсул
-  if (await initReadContract()) await loadTotal();
-  else totalBadge.innerHTML = '📦 Total capsules: (RPC offline)';
+  // RPC инициализируется только при нажатии Read или Connect
 }
 </script>
 </body>
