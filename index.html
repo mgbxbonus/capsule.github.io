@@ -1,68 +1,459 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Time Capsule — Base (Fixed)</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<title>Time Capsule — Base</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js" integrity="sha512-hG6tLc9q8bFM5OQASDTJTJJg/wn8PP0PcayE3I2H1972/F7ktiSvWutAuQIkt4QUTIhiaFEnkrKea7XHUv1ugg==" crossorigin="anonymous"></script>
 <style>
-  /* (стили такие же, как в прошлый раз, не менялись) */
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500&display=swap');
+
   *{margin:0;padding:0;box-sizing:border-box}
-  body{background:#0a0a0f;color:#e8e8f0;font-family:'Inter',sans-serif;padding:0 16px 80px}
-  header{max-width:680px;margin:0 auto;padding:48px 0 40px;border-bottom:1px solid #1e1e2e}
-  .logo{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.2em;color:#5a5a72}
-  .logo span{color:#5b6af0}
-  h1{font-family:'Space Mono',monospace;font-size:clamp(28px,5vw,42px);letter-spacing:-.02em}
-  h1 em{color:#5b6af0;font-style:normal}
-  .tagline{color:#5a5a72;margin-top:12px}
-  .btn{font-family:'Space Mono',monospace;padding:10px 20px;border-radius:6px;cursor:pointer;border:none}
-  .btn-primary{background:#5b6af0;color:#fff}
-  .btn-ghost{background:0 0;border:1px solid #1e1e2e;color:#5a5a72}
-  .wallet-addr{font-family:'Space Mono',monospace;background:#0f2a1f;color:#3ddc84;padding:6px 12px;border-radius:4px}
-  main{max-width:680px;margin:40px auto 0}
-  .form-card{background:#111118;border:1px solid #1e1e2e;border-radius:12px;padding:24px;margin-bottom:40px}
-  textarea,input{background:#0a0a0f;border:1px solid #1e1e2e;border-radius:8px;color:#e8e8f0;padding:12px;width:100%}
-  textarea:focus,input:focus{border-color:#5b6af0;outline:0}
-  .date-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:12px}
-  .status{margin-top:14px;font-size:12px;color:#5a5a72}
-  .status.ok{color:#3ddc84}
-  .status.err{color:#f07070}
-  .capsule-card{background:#111118;border-radius:12px;padding:20px;margin-bottom:12px;position:relative}
-  .capsule-card.locked{border-color:#2a1f4e;background:#0e0c18}
-  .capsule-card.unlocked{border-color:#1a3a2a;background:#0b160f}
-  .badge{font-size:9px;padding:3px 8px;border-radius:3px;font-family:'Space Mono',monospace}
-  .badge.locked{background:rgba(91,106,240,.15);color:#5b6af0}
-  .badge.unlocked{background:rgba(61,220,132,.1);color:#3ddc84}
-  .capsule-footer{display:flex;justify-content:space-between;font-size:11px;color:#5a5a72;margin-top:12px}
-  .network-warn{background:#3d1a1a;border:1px solid #f07070;border-radius:8px;padding:12px;color:#f07070;display:none;margin-bottom:20px}
+
+  :root {
+    --blue: #0000FF;
+    --black: #000000;
+    --white: #FFFFFF;
+    --gray: #DDE3E9;
+    --gray2: #787878;
+    --green: #A7E66B;
+    --pink: #FEA8CD;
+    --yellow: #FBD880;
+    --bg: #F5F5F5;
+  }
+
+  body {
+    background: var(--white);
+    color: var(--black);
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    min-height: 100vh;
+    padding: 0 16px 80px;
+  }
+
+  header {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 48px 0 40px;
+    border-bottom: 1px solid var(--gray);
+  }
+
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gray2);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--blue);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .logo a {
+    color: var(--blue);
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: clamp(32px, 6vw, 52px);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--black);
+  }
+
+  h1 em {
+    font-style: normal;
+    color: var(--blue);
+  }
+
+  .tagline {
+    margin-top: 14px;
+    font-size: 15px;
+    color: var(--gray2);
+    line-height: 1.6;
+    max-width: 480px;
+  }
+
+  .connect-bar {
+    margin-top: 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    border: none;
+    cursor: pointer;
+    padding: 10px 22px;
+    border-radius: 999px;
+    transition: background 0.15s, transform 0.1s;
+    font-weight: 400;
+  }
+
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-primary {
+    background: var(--blue);
+    color: var(--white);
+  }
+  .btn-primary:hover:not(:disabled) { background: #0000CC; }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1.5px solid var(--black);
+    color: var(--black);
+  }
+  .btn-ghost:hover { background: var(--gray); }
+
+  .wallet-addr {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--black);
+    background: var(--gray);
+    padding: 6px 14px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .wallet-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  main {
+    max-width: 680px;
+    margin: 40px auto 0;
+  }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gray2);
+    margin-bottom: 14px;
+  }
+
+  .form-card {
+    background: var(--white);
+    border: 1.5px solid var(--gray);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 40px;
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--gray);
+    border-radius: 6px;
+    color: var(--black);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    padding: 14px;
+    resize: vertical;
+    min-height: 100px;
+    outline: none;
+    transition: border-color 0.15s;
+    line-height: 1.6;
+  }
+  textarea:focus { border-color: var(--blue); }
+  textarea::placeholder { color: var(--gray2); }
+
+  .char-count {
+    font-size: 11px;
+    color: var(--gray2);
+    text-align: right;
+    margin-top: 6px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .date-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    margin-top: 12px;
+    align-items: end;
+  }
+
+  .field-label {
+    font-size: 11px;
+    color: var(--gray2);
+    margin-bottom: 6px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  input[type="datetime-local"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--gray);
+    border-radius: 6px;
+    color: var(--black);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="datetime-local"]:focus { border-color: var(--blue); }
+
+  .status {
+    margin-top: 14px;
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    color: var(--gray2);
+    min-height: 18px;
+  }
+  .status.ok { color: #007700; }
+  .status.err { color: #CC0000; }
+
+  .read-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: end;
+  }
+
+  input[type="number"] {
+    width: 100%;
+    background: var(--white);
+    border: 1.5px solid var(--black);
+    border-radius: 6px;
+    color: var(--black);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.15s;
+    -moz-appearance: textfield;
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="number"]:focus { border-color: var(--blue); }
+
+  .capsule-card {
+    border: 1.5px solid var(--gray);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 12px;
+    background: var(--white);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .capsule-card.locked {
+    border-color: var(--blue);
+    background: #F0F0FF;
+  }
+
+  .capsule-card.unlocked {
+    border-color: var(--green);
+    background: #F5FFF0;
+  }
+
+  .capsule-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px;
+    height: 100%;
+  }
+  .capsule-card.locked::before { background: var(--blue); }
+  .capsule-card.unlocked::before { background: var(--green); }
+
+  .capsule-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-left: 4px;
+  }
+
+  .capsule-id {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--gray2);
+  }
+
+  .badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 999px;
+  }
+
+  .badge.locked {
+    background: var(--blue);
+    color: var(--white);
+  }
+
+  .badge.unlocked {
+    background: var(--green);
+    color: var(--black);
+  }
+
+  .capsule-message {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--black);
+    margin-bottom: 14px;
+    padding-left: 4px;
+  }
+
+  .locked-placeholder {
+    font-size: 13px;
+    color: var(--gray2);
+    padding-left: 4px;
+  }
+
+  .capsule-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--gray2);
+    font-family: 'Space Mono', monospace;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-left: 4px;
+  }
+
+  .countdown {
+    color: var(--blue);
+    font-weight: 700;
+  }
+
+  .total-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--gray2);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .total-badge strong {
+    color: var(--black);
+    font-size: 13px;
+  }
+
+  .total-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--blue);
+    color: var(--white);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .network-warn {
+    background: #FFF0F0;
+    border: 1.5px solid #CC0000;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #CC0000;
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 20px;
+    display: none;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--gray);
+    margin: 40px 0;
+  }
+
+  /* accent squares like Base branding */
+  .accent-sq {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background: var(--blue);
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
 </style>
 </head>
 <body>
+
 <header>
-  <div class="logo">On-chain · <span>Base Mainnet</span> · 0x36A9...08e69</div>
+  <div class="logo">
+    <span class="logo-dot"></span>
+    On-chain &nbsp;·&nbsp; <a href="https://base.org" target="_blank">Base</a> Mainnet &nbsp;·&nbsp; 0x36A9...08e69
+  </div>
   <h1>Time<br><em>Capsule</em></h1>
   <p class="tagline">Write a message. Set a date. It stays sealed until then — forever on Base.</p>
   <div class="connect-bar">
     <button class="btn btn-primary" id="connectBtn">Connect Wallet</button>
-    <div class="wallet-addr" id="walletAddr" style="display:none"></div>
+    <div class="wallet-addr" id="walletAddr" style="display:none">
+      <span class="wallet-dot"></span>
+      <span id="walletAddrText"></span>
+    </div>
   </div>
 </header>
 
 <main>
   <div class="network-warn" id="networkWarn">⚠ Switch to Base Mainnet (chain 8453)</div>
+
+  <div class="section-label"><span class="accent-sq"></span>Create a capsule</div>
   <div class="form-card">
-    <textarea id="msgInput" placeholder="Your message to the future..." maxlength="1000"></textarea>
+    <textarea id="msgInput" placeholder="Write your message to the future..." maxlength="1000"></textarea>
+    <div class="char-count"><span id="charCount">0</span> / 1000</div>
     <div class="date-row">
-      <input type="datetime-local" id="dateInput">
+      <div>
+        <div class="field-label">Unlock date</div>
+        <input type="datetime-local" id="dateInput">
+      </div>
       <button class="btn btn-primary" id="createBtn" disabled>Seal →</button>
     </div>
     <div class="status" id="createStatus"></div>
   </div>
-  <div style="display:flex;gap:10px;margin-bottom:20px">
-    <input type="number" id="capsuleIdInput" placeholder="Capsule ID" style="flex:1">
+
+  <hr class="divider">
+
+  <div class="section-label"><span class="accent-sq"></span>Read a capsule</div>
+  <div class="read-row">
+    <div>
+      <div class="field-label">Capsule ID</div>
+      <input type="number" id="capsuleIdInput" placeholder="0" min="0">
+    </div>
     <button class="btn btn-ghost" id="readBtn">Read</button>
   </div>
-  <div id="totalBadge" style="font-size:12px;margin-bottom:16px"></div>
+
+  <div id="totalBadge"></div>
   <div id="capsuleResult"></div>
 </main>
 
@@ -89,6 +480,7 @@ async function startApp() {
 
   const connectBtn = document.getElementById('connectBtn');
   const walletAddr = document.getElementById('walletAddr');
+  const walletAddrText = document.getElementById('walletAddrText');
   const createBtn = document.getElementById('createBtn');
   const msgInput = document.getElementById('msgInput');
   const dateInput = document.getElementById('dateInput');
@@ -99,18 +491,21 @@ async function startApp() {
   const totalBadge = document.getElementById('totalBadge');
   const networkWarn = document.getElementById('networkWarn');
 
+  msgInput.addEventListener('input', e => {
+    document.getElementById('charCount').textContent = e.target.value.length;
+  });
+
   function setStatus(msg, type = '') {
     createStatus.textContent = msg;
     createStatus.className = 'status ' + type;
   }
 
-  // Инициализация read-контракта через любой работающий RPC
   async function initReadContract() {
     for (const rpc of RPC_LIST) {
       try {
         const provider = new ethers.JsonRpcProvider(rpc);
         const contract = new ethers.Contract(CONTRACT, ABI, provider);
-        await contract.totalCapsules(); // проверка
+        await contract.totalCapsules();
         readContract = contract;
         return true;
       } catch(e) {}
@@ -122,8 +517,8 @@ async function startApp() {
     if (!readContract) return;
     try {
       const total = await readContract.totalCapsules();
-      totalBadge.innerHTML = `📦 Total capsules: <strong>${total.toString()}</strong>`;
-    } catch(e) { totalBadge.innerHTML = `📦 Total capsules: —`; }
+      totalBadge.innerHTML = `<span class="total-pill">⬡ ${total.toString()} capsules sealed on Base</span>`;
+    } catch(e) { totalBadge.innerHTML = ''; }
   }
 
   async function switchToBase() {
@@ -135,8 +530,10 @@ async function startApp() {
     } catch(e) {
       if (e.code === 4902) {
         await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [{
-          chainId: '0x2105', chainName: 'Base Mainnet', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-          rpcUrls: ['https://mainnet.base.org'], blockExplorerUrls: ['https://basescan.org']
+          chainId: '0x2105', chainName: 'Base Mainnet',
+          nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+          rpcUrls: ['https://mainnet.base.org'],
+          blockExplorerUrls: ['https://basescan.org']
         }]});
         networkWarn.style.display = 'none';
         return true;
@@ -146,7 +543,7 @@ async function startApp() {
   }
 
   async function connectWallet() {
-    if (!window.ethereum) return setStatus('❌ MetaMask not found', 'err');
+    if (!window.ethereum) return setStatus('MetaMask not found', 'err');
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       await provider.send("eth_requestAccounts", []);
@@ -155,23 +552,24 @@ async function startApp() {
       if (Number(network.chainId) !== BASE_CHAIN_ID) {
         networkWarn.style.display = 'block';
         const ok = await switchToBase();
-        if (!ok) return setStatus('⚠️ Switch to Base Mainnet', 'err');
+        if (!ok) return setStatus('Switch to Base Mainnet', 'err');
         const newProvider = new ethers.BrowserProvider(window.ethereum);
         signer = await newProvider.getSigner();
       }
       networkWarn.style.display = 'none';
       signerContract = new ethers.Contract(CONTRACT, ABI, signer);
       const addr = await signer.getAddress();
-      walletAddr.textContent = addr.slice(0,6)+'...'+addr.slice(-4);
-      walletAddr.style.display = 'block';
+      walletAddrText.textContent = addr.slice(0,6)+'...'+addr.slice(-4);
+      walletAddr.style.display = 'flex';
       connectBtn.style.display = 'none';
       createBtn.disabled = false;
-      setStatus('✅ Ready to seal', 'ok');
-      // Обновим read-contract с тем же провайдером для консистентности
+      setStatus('Ready to seal', 'ok');
       readContract = new ethers.Contract(CONTRACT, ABI, signer);
+      window.ethereum.on('accountsChanged', () => location.reload());
+      window.ethereum.on('chainChanged', () => location.reload());
       await loadTotal();
     } catch(e) {
-      setStatus('❌ ' + (e.message?.slice(0,80) || 'Connection failed'), 'err');
+      setStatus(e.message?.slice(0,80) || 'Connection failed', 'err');
     }
   }
 
@@ -183,31 +581,28 @@ async function startApp() {
     if (!dateVal) return setStatus('Select unlock date', 'err');
     const unlockTime = Math.floor(new Date(dateVal).getTime() / 1000);
     if (unlockTime <= Math.floor(Date.now()/1000)) return setStatus('Date must be in future', 'err');
-
     try {
-      setStatus('✍️ Confirm in MetaMask...');
+      setStatus('Confirm in MetaMask...');
       const tx = await signerContract.createCapsule(msg, unlockTime);
-      setStatus(`⏳ Tx: ${tx.hash.slice(0,10)}... waiting`);
+      setStatus('Sealing capsule...');
       const receipt = await tx.wait();
       let newId = '?';
       for (const log of receipt.logs) {
         try {
           const parsed = signerContract.interface.parseLog(log);
-          if (parsed?.name === 'CapsuleCreated') {
-            newId = parsed.args[0].toString();
-            break;
-          }
+          if (parsed?.name === 'CapsuleCreated') { newId = parsed.args[0].toString(); break; }
         } catch(e) {}
       }
-      setStatus(`✅ Capsule #${newId} sealed!`, 'ok');
+      setStatus(`Capsule #${newId} sealed on Base`, 'ok');
       msgInput.value = '';
+      document.getElementById('charCount').textContent = '0';
       dateInput.value = '';
       await loadTotal();
     } catch(e) {
-      let errMsg = e.message || String(e);
-      if (errMsg.includes('user rejected')) errMsg = 'Transaction rejected';
-      else if (errMsg.includes('insufficient funds')) errMsg = 'Insufficient ETH for gas';
-      setStatus(`❌ ${errMsg.slice(0,90)}`, 'err');
+      let msg = e.message || String(e);
+      if (msg.includes('user rejected')) msg = 'Transaction rejected';
+      else if (msg.includes('insufficient funds')) msg = 'Insufficient ETH for gas';
+      setStatus(msg.slice(0,90), 'err');
     }
   }
 
@@ -216,56 +611,67 @@ async function startApp() {
     if (id === '') return;
     if (!readContract) {
       if (!await initReadContract()) {
-        capsuleResult.innerHTML = '<div class="capsule-card"><p>⚠️ Cannot connect to blockchain</p></div>';
+        const el = document.getElementById('capsuleResult');
+        el.innerHTML = '<div class="capsule-card"><p class="locked-placeholder">Cannot connect to blockchain</p></div>';
         return;
       }
     }
     try {
       const timeLeft = await readContract.timeUntilUnlock(BigInt(id));
+      const el = document.getElementById('capsuleResult');
       if (timeLeft > 0n) {
-        const seconds = Number(timeLeft);
-        const days = Math.floor(seconds / 86400);
-        const hours = Math.floor((seconds % 86400) / 3600);
-        const mins = Math.floor((seconds % 3600) / 60);
-        capsuleResult.innerHTML = `
+        const secs = Number(timeLeft);
+        const d = Math.floor(secs/86400);
+        const h = Math.floor((secs%86400)/3600);
+        const m = Math.floor((secs%3600)/60);
+        el.innerHTML = `
           <div class="capsule-card locked">
-            <div><span class="badge locked">🔒 Locked</span> <span style="font-size:12px">#${id}</span></div>
-            <div class="capsule-footer">⏳ Opens in ${days}d ${hours}h ${mins}m</div>
+            <div class="capsule-meta">
+              <span class="badge locked">Locked</span>
+              <span class="capsule-id">#${id}</span>
+            </div>
+            <p class="locked-placeholder">This capsule is sealed.</p>
+            <div class="capsule-footer">
+              <span class="countdown">Opens in ${d}d ${h}h ${m}m</span>
+            </div>
           </div>`;
       } else {
         const [author, message, unlockTime] = await readContract.readCapsule(BigInt(id));
-        const date = new Date(Number(unlockTime)*1000).toLocaleDateString();
-        capsuleResult.innerHTML = `
+        const _d = new Date(Number(unlockTime)*1000);
+        const _months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const date = _months[_d.getMonth()] + ' ' + _d.getDate() + ', ' + _d.getFullYear();
+        el.innerHTML = `
           <div class="capsule-card unlocked">
-            <div><span class="badge unlocked">🔓 Unlocked</span> <span style="font-size:12px">#${id}</span></div>
-            <p style="margin:12px 0">${escapeHtml(message)}</p>
-            <div class="capsule-footer">✍️ ${author.slice(0,6)}...${author.slice(-4)} &nbsp; 📅 ${date}</div>
+            <div class="capsule-meta">
+              <span class="badge unlocked">Unlocked</span>
+              <span class="capsule-id">#${id}</span>
+            </div>
+            <p class="capsule-message"></p>
+            <div class="capsule-footer">
+              <span>${author.slice(0,6)}...${author.slice(-4)}</span>
+              <span>${date}</span>
+            </div>
           </div>`;
+        el.querySelector('.capsule-message').textContent = message;
       }
     } catch(e) {
-      capsuleResult.innerHTML = `<div class="capsule-card"><p>❌ Capsule #${id} not found</p></div>`;
+      const el = document.getElementById('capsuleResult');
+      el.innerHTML = '<div class="capsule-card"><p class="locked-placeholder"></p></div>';
+      el.querySelector('p').textContent = e.reason || 'Capsule not found';
     }
   }
 
-  function escapeHtml(s) {
-    return s.replace(/[&<>]/g, function(m) {
-      if (m === '&') return '&amp;';
-      if (m === '<') return '&lt;';
-      if (m === '>') return '&gt;';
-      return m;
-    }).replace(/\n/g, '<br>');
-  }
-
-  // UI events
   document.getElementById('dateInput').min = new Date(Date.now()+60000).toISOString().slice(0,16);
   connectBtn.onclick = connectWallet;
   createBtn.onclick = createCapsule;
   readBtn.onclick = readCapsule;
   capsuleIdInput.onkeypress = (e) => e.key === 'Enter' && readCapsule();
 
-  // Стартовая загрузка количества капсул
-  if (await initReadContract()) await loadTotal();
-  else totalBadge.innerHTML = '📦 Total capsules: (RPC offline)';
+  try {
+    const p = new ethers.JsonRpcProvider('https://mainnet.base.org');
+    readContract = new ethers.Contract(CONTRACT, ABI, p);
+    loadTotal();
+  } catch(e) {}
 }
 </script>
 </body>
